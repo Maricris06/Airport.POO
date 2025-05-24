@@ -1,137 +1,149 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package core.models.storage;
 
 import core.models.airport.Flight;
+import core.models.airport.Location;
 import core.models.airport.Passenger;
 import core.models.airport.Plane;
-import java.util.ArrayList;
+import core.models.airport.Flight;
+import core.models.airport.Location;
+import core.models.airport.Passenger;
+import core.models.airport.Plane;
+import core.utils.events.DataType;
+import java.io.*;
+import java.util.*;
+import core.utils.events.StorageListener;
 
-/**
- *
- * @author User invitado
- */
-public class Storage {
-      private static Storage instance;
+public final class Storage {
+    // Singleton thread-safe mejorado
+    private static volatile Storage instance;
+    private static final Object lock = new Object();
 
-    private ArrayList<Flight> flights;
-    private ArrayList<Passenger> passengers;
-    private ArrayList<Plane> planes;
+    // Repositorios concretos (usando las implementaciones que creamos)
+    private final FlightRepository flightRepo;
+    private final PassengerRepository passengerRepo;
+    private final PlaneRepository planeRepo;
+    private final LocationRepository locationRepo;
+    private final StorageNotifier notifier;
 
     private Storage() {
-        this.flights = new ArrayList<>();
-        this.passengers = new ArrayList<>();
+        this.notifier = new StorageNotifier();
+        this.flightRepo = new FlightRepository();
+        this.passengerRepo = new PassengerRepository();
+        this.planeRepo = new PlaneRepository();
+        this.locationRepo = new LocationRepository();
+        
+        // Configurar notificaciones automáticas en los repositorios
+        configureRepositories();
+    }
+
+    private void configureRepositories() {
+        // Versión corregida
+        flightRepo.setUpdateHandler(() -> notifier.notify(DataType.FLIGHT));
+        passengerRepo.setUpdateHandler(() -> notifier.notify(DataType.PASSENGER));
+        planeRepo.setUpdateHandler(() -> notifier.notify(DataType.PLANE));
+        locationRepo.setUpdateHandler(() -> notifier.notify(DataType.LOCATION));
     }
 
     public static Storage getInstance() {
         if (instance == null) {
-            instance = new Storage();
+            synchronized (lock) {
+                if (instance == null) {
+                    instance = new Storage();
+                }
+            }
         }
         return instance;
     }
 
-    // ----------- FLIGHTS -----------
-
-    public boolean addFlight(Flight flight) {
-        for (Flight f : this.flights) {
-            if (f.getId().equals(flight.getId())) {
-                return false;
-            }
-        }
-        this.flights.add(flight);
-        return true;
+    // Métodos de acceso a repositorios
+    public FlightRepository flights() {
+        return flightRepo;
     }
 
-    public Flight getFlight(String id) {
-        for (Flight flight : this.flights) {
-            if (flight.getId().equals(id)) {
-                return flight;
-            }
-        }
-        return null;
+    public PassengerRepository passengers() {
+        return passengerRepo;
     }
 
-    public boolean delFlight(String id) {
-        for (Flight flight : this.flights) {
-            if (flight.getId().equals(id)) {
-                this.flights.remove(flight);
-                return true;
-            }
-        }
-        return false;
+    public PlaneRepository planes() {
+        return planeRepo;
     }
 
-    public ArrayList<Flight> getAllFlights() {
-        return new ArrayList<>(this.flights);
+    public LocationRepository locations() {
+        return locationRepo;
     }
 
-    // ----------- PASSENGERS -----------
-
-    public boolean addPassenger(Passenger passenger) {
-        for (Passenger p : this.passengers) {
-            if (p.getId() == passenger.getId()) {
-                return false;
-            }
-        }
-        this.passengers.add(passenger);
-        return true;
+    // Sistema de notificación
+    public void subscribe(DataType type, StorageListener listener) {
+        notifier.subscribe(type, listener);
     }
 
-    public Passenger getPassenger(long id) {
-        for (Passenger passenger : this.passengers) {
-            if (passenger.getId() == id) {
-                return passenger;
-            }
-        }
-        return null;
+    public void unsubscribe(DataType type, StorageListener listener) {
+        notifier.unsubscribe(type, listener);
     }
 
-    public boolean delPassenger(long id) {
-        for (Passenger passenger : this.passengers) {
-            if (passenger.getId() == id) {
-                this.passengers.remove(passenger);
-                return true;
+    // Persistencia
+    public static class Persistence {
+        private static final String DEFAULT_FILE = "storage.dat";
+
+        public static void save() throws IOException {
+            save(DEFAULT_FILE);
+        }
+
+        public static void save(String filename) throws IOException {
+            try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(filename))) {
+                Map<String, Object> data = new HashMap<>();
+                data.put("flights", Storage.getInstance().flightRepo.getAll());
+                data.put("passengers", Storage.getInstance().passengerRepo.getAll());
+                data.put("planes", Storage.getInstance().planeRepo.getAll());
+                data.put("locations", Storage.getInstance().locationRepo.getAll());
+                oos.writeObject(data);
             }
         }
-        return false;
+
+        @SuppressWarnings("unchecked")
+        public static void load() throws IOException, ClassNotFoundException {
+            load(DEFAULT_FILE);
+        }
+
+        @SuppressWarnings("unchecked")
+        public static void load(String filename) throws IOException, ClassNotFoundException {
+            Storage storage = Storage.getInstance();
+            
+            try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(filename))) {
+                Map<String, Object> data = (Map<String, Object>) ois.readObject();
+                
+                // Limpiar datos existentes
+                storage.flightRepo.getAll().forEach(f -> storage.flightRepo.remove(f.getId()));
+                storage.passengerRepo.getAll().forEach(p -> storage.passengerRepo.remove(p.getId()));
+                storage.planeRepo.getAll().forEach(p -> storage.planeRepo.remove(p.getId()));
+                storage.locationRepo.getAll().forEach(l -> storage.locationRepo.remove(l.getAirportId()));
+                
+                // Cargar nuevos datos
+                ((List<Flight>) data.get("flights")).forEach(storage.flightRepo::add);
+                ((List<Passenger>) data.get("passengers")).forEach(storage.passengerRepo::add);
+                ((List<Plane>) data.get("planes")).forEach(storage.planeRepo::add);
+                ((List<Location>) data.get("locations")).forEach(storage.locationRepo::add);
+                
+                // Notificar cambios
+                Arrays.stream(DataType.values()).forEach(storage.notifier::notify);
+            }
+        }
     }
 
-    public ArrayList<Passenger> getAllPassengers() {
-        return new ArrayList<>(this.passengers);
+    // Métodos adicionales para ordenamiento
+    public List<Flight> getSortedFlights(Comparator<Flight> comparator) {
+        return flightRepo.getAllSorted(comparator);
     }
-    
-    // ----------- PLANES -----------
-    public boolean addPlane(Plane plane) {
-        for (Plane p : this.planes) {
-            if (p.getId().equals(plane.getId())) {
-                return false; // Plane already exists
-            }
-        }
-        this.planes.add(plane);
-        return true;
+
+    public List<Passenger> getSortedPassengers(Comparator<Passenger> comparator) {
+        return passengerRepo.getAllSorted(comparator);
     }
-    
-    public Plane getPlane(String id) {
-        for (Plane plane : this.planes) {
-            if (plane.getId().equals(id)) {
-                return plane;
-            }
-        }
-        return null;
+
+    public List<Plane> getSortedPlanes(Comparator<Plane> comparator) {
+        return planeRepo.getAllSorted(comparator);
     }
-    public boolean delPlane(String id) {
-        for (Plane plane : this.planes) {
-            if (plane.getId().equals(id)) {
-                this.planes.remove(plane);
-                return true;
-            }
-        }
-        return false;
-    }
-    public ArrayList<Plane> getAllPlanes() {
-        return new ArrayList<>(this.planes);
+
+    public List<Location> getSortedLocations(Comparator<Location> comparator) {
+        return locationRepo.getAllSorted(comparator);
     }
 }
-

@@ -1,118 +1,213 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package core.models.airport;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
+import java.time.Duration;
+import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
 
-/**
- *
- * @author 
- */
-public class Flight {
-    
-    private final String id;
-    private ArrayList<Passenger> passengers;
-    private Plane plane;
-    private Location departureLocation;
-    private Location scaleLocation;
-    private Location arrivalLocation;
-    private LocalDateTime departureDate;
-    private int hoursDurationArrival;
-    private int minutesDurationArrival;
-    private int hoursDurationScale;
-    private int minutesDurationScale;
-    
+public final class Flight {
+    // --- Campos inmutables (final) ---
+    private final String id;                   // Formato: XXXYYY (3 letras + 3 números)
+    private final Plane plane;                 // Avión asignado (debe existir previamente)
+    private final Location departureLocation;  // Aeropuerto de salida (debe existir)
+    private final Location arrivalLocation;    // Aeropuerto de llegada (debe existir)
+    private final LocalDateTime departureDate;  // Fecha-hora de salida (validada)
+    private final Duration flightDuration;      // Duración del vuelo (> 00:00)
+    private final Location scaleLocation;       // Escala opcional (puede ser null)
+    private final Duration scaleDuration;       // Duración de escala (0 si no hay escala)
+    private final FlightStatus status;          // Estado del vuelo (enum)
+    private final List<Passenger> passengers;   // Lista inmutable de pasajeros
 
-    public Flight(String id, Plane plane, Location departureLocation, Location arrivalLocation, LocalDateTime departureDate, int hoursDurationArrival, int minutesDurationArrival) {
-        this.id = id;
-        this.passengers = new ArrayList<>();
-        this.plane = plane;
-        this.departureLocation = departureLocation;
-        this.arrivalLocation = arrivalLocation;
-        this.departureDate = departureDate;
-        this.hoursDurationArrival = hoursDurationArrival;
-        this.minutesDurationArrival = minutesDurationArrival;
+    // --- Enum para estados del vuelo ---
+    public enum FlightStatus {
+        SCHEDULED, DELAYED, BOARDING, IN_FLIGHT, LANDED, CANCELLED
+    }
+
+    // --- Builder (para construcción flexible) ---
+    public static class Builder {
+        // Campos requeridos
+        private final String id;
+        private final Plane plane;
+        private final Location departureLocation;
+        private final Location arrivalLocation;
+        private final LocalDateTime departureDate;
+        private final Duration flightDuration;
+
+        // Campos opcionales
+        private Location scaleLocation = null;
+        private Duration scaleDuration = Duration.ZERO;
+        private FlightStatus status = FlightStatus.SCHEDULED;
+        private List<Passenger> passengers = Collections.emptyList();
+
+        public Builder(String id, Plane plane, Location departureLocation, 
+                      Location arrivalLocation, LocalDateTime departureDate,
+                      Duration flightDuration) {
+            this.id = id;
+            this.plane = plane;
+            this.departureLocation = departureLocation;
+            this.arrivalLocation = arrivalLocation;
+            this.departureDate = departureDate;
+            this.flightDuration = flightDuration;
+        }
+
+        public Builder withScale(Location scaleLocation, Duration scaleDuration) {
+            this.scaleLocation = scaleLocation;
+            this.scaleDuration = scaleDuration;
+            return this;
+        }
+
+        public Builder withStatus(FlightStatus status) {
+            this.status = status;
+            return this;
+        }
+
+        public Builder withPassengers(List<Passenger> passengers) {
+            this.passengers = passengers != null ? List.copyOf(passengers) : Collections.emptyList();
+            return this;
+        }
+
+        public Flight build() {
+            return new Flight(this);
+        }
+    }
+
+    // --- Constructor privado (usa Builder) ---
+    private Flight(Builder builder) {
+        validateFlightId(builder.id);
+        validateNonNullComponents(builder.plane, builder.departureLocation, 
+                                builder.arrivalLocation, builder.departureDate);
+        validateDifferentLocations(builder.departureLocation, builder.arrivalLocation);
+        validateFlightDuration(builder.flightDuration);
         
-        this.plane.addFlight(this);
+        if (builder.scaleLocation != null) {
+            validateScale(builder.scaleLocation, builder.scaleDuration);
+        }
+
+        this.id = builder.id.toUpperCase();
+        this.plane = builder.plane;
+        this.departureLocation = builder.departureLocation;
+        this.arrivalLocation = builder.arrivalLocation;
+        this.departureDate = builder.departureDate;
+        this.flightDuration = builder.flightDuration;
+        this.scaleLocation = builder.scaleLocation;
+        this.scaleDuration = builder.scaleDuration;
+        this.status = builder.status;
+        this.passengers = Collections.unmodifiableList(builder.passengers);
     }
 
-    public Flight(String id, Plane plane, Location departureLocation, Location scaleLocation, Location arrivalLocation, LocalDateTime departureDate, int hoursDurationArrival, int minutesDurationArrival, int hoursDurationScale, int minutesDurationScale) {
-        this.id = id;
-        this.passengers = new ArrayList<>();
-        this.plane = plane;
-        this.departureLocation = departureLocation;
-        this.scaleLocation = scaleLocation;
-        this.arrivalLocation = arrivalLocation;
-        this.departureDate = departureDate;
-        this.hoursDurationArrival = hoursDurationArrival;
-        this.minutesDurationArrival = minutesDurationArrival;
-        this.hoursDurationScale = hoursDurationScale;
-        this.minutesDurationScale = minutesDurationScale;
-        
-        this.plane.addFlight(this);
-    }
-    
-    public void addPassenger(Passenger passenger) {
-        this.passengers.add(passenger);
-    }
-    
-    public String getId() {
-        return id;
+    // --- Validaciones privadas ---
+    private void validateFlightId(String id) {
+        if (id == null || !id.matches("^[A-Z]{3}\\d{3}$")) {
+            throw new IllegalArgumentException("Flight ID must be in format XXXYYY (3 letters + 3 digits)");
+        }
     }
 
-    public Location getDepartureLocation() {
-        return departureLocation;
+    private void validateNonNullComponents(Plane plane, Location departure, 
+                                        Location arrival, LocalDateTime date) {
+        Objects.requireNonNull(plane, "Plane cannot be null");
+        Objects.requireNonNull(departure, "Departure location cannot be null");
+        Objects.requireNonNull(arrival, "Arrival location cannot be null");
+        Objects.requireNonNull(date, "Departure date cannot be null");
     }
 
-    public Location getScaleLocation() {
-        return scaleLocation;
+    private void validateDifferentLocations(Location departure, Location arrival) {
+        if (departure.equals(arrival)) {
+            throw new IllegalArgumentException("Departure and arrival locations must be different");
+        }
     }
 
-    public Location getArrivalLocation() {
-        return arrivalLocation;
+    private void validateFlightDuration(Duration duration) {
+        if (duration == null || duration.isNegative() || duration.isZero()) {
+            throw new IllegalArgumentException("Flight duration must be positive");
+        }
     }
 
-    public LocalDateTime getDepartureDate() {
-        return departureDate;
+    private void validateScale(Location scaleLocation, Duration scaleDuration) {
+        Objects.requireNonNull(scaleLocation, "Scale location cannot be null");
+        if (scaleDuration == null || scaleDuration.isNegative()) {
+            throw new IllegalArgumentException("Scale duration cannot be negative");
+        }
     }
 
-    public int getHoursDurationArrival() {
-        return hoursDurationArrival;
+    // --- Getters (no hay setters) ---
+    public String getId() { return id; }
+    public Plane getPlane() { return plane; }
+    public Location getDepartureLocation() { return departureLocation; }
+    public Location getArrivalLocation() { return arrivalLocation; }
+    public LocalDateTime getDepartureDate() { return departureDate; }
+    public Duration getFlightDuration() { return flightDuration; }
+    public Location getScaleLocation() { return scaleLocation; }
+    public Duration getScaleDuration() { return scaleDuration; }
+    public FlightStatus getStatus() { return status; }
+    public List<Passenger> getPassengers() { return passengers; }
+
+    // --- Métodos de negocio (inmutables) ---
+    public Flight withDelay(Duration delay) {
+        if (delay == null || delay.isNegative() || delay.isZero()) {
+            throw new IllegalArgumentException("Delay duration must be positive");
+        }
+        return new Builder(id, plane, departureLocation, arrivalLocation, 
+                         departureDate.plus(delay), flightDuration)
+            .withScale(scaleLocation, scaleDuration)
+            .withStatus(FlightStatus.DELAYED)
+            .withPassengers(passengers)
+            .build();
     }
 
-    public int getMinutesDurationArrival() {
-        return minutesDurationArrival;
+    public Flight withCancelledStatus() {
+        return new Builder(id, plane, departureLocation, arrivalLocation,
+                         departureDate, flightDuration)
+            .withScale(scaleLocation, scaleDuration)
+            .withStatus(FlightStatus.CANCELLED)
+            .withPassengers(Collections.emptyList()) // Elimina pasajeros al cancelar
+            .build();
     }
 
-    public int getHoursDurationScale() {
-        return hoursDurationScale;
+    // --- Métodos calculados ---
+    public LocalDateTime getArrivalTime() {
+        return departureDate.plus(flightDuration).plus(scaleDuration);
     }
 
-    public int getMinutesDurationScale() {
-        return minutesDurationScale;
+    public boolean hasScale() {
+        return scaleLocation != null && !scaleDuration.isZero();
     }
 
-    public Plane getPlane() {
-        return plane;
+    public boolean isInternational() {
+        return !departureLocation.getCountry().equals(arrivalLocation.getCountry());
     }
 
-    public void setDepartureDate(LocalDateTime departureDate) {
-        this.departureDate = departureDate;
+    // --- Patrón Prototype (para respuestas del controlador) ---
+    @Override
+    public Flight clone() {
+        return new Builder(id, plane, departureLocation, arrivalLocation,
+                         departureDate, flightDuration)
+            .withScale(scaleLocation, scaleDuration)
+            .withStatus(status)
+            .withPassengers(passengers)
+            .build();
     }
-    
-    public LocalDateTime calculateArrivalDate() {
-        return departureDate.plusHours(hoursDurationScale).plusHours(hoursDurationArrival).plusMinutes(minutesDurationScale).plusMinutes(minutesDurationArrival);
+
+    // --- Equals & HashCode (basado en ID) ---
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof Flight)) return false;
+        Flight flight = (Flight) o;
+        return id.equals(flight.id);
     }
-    
-    public void delay(int hours, int minutes) {
-        this.departureDate = this.departureDate.plusHours(hours).plusMinutes(minutes);
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id);
     }
-    
-    public int getNumPassengers() {
-        return passengers.size();
+
+    @Override
+    public String toString() {
+        return String.format(
+            "Flight[id=%s, from=%s to=%s, departure=%s, status=%s]", 
+            id, departureLocation.getAirportId(), 
+            arrivalLocation.getAirportId(), departureDate, status
+        );
     }
-    
 }
