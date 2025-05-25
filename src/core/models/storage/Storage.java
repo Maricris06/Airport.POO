@@ -23,7 +23,7 @@ public final class Storage {
     private final PassengerRepository passengerRepo;
     private final PlaneRepository planeRepo;
     private final LocationRepository locationRepo;
-    private final StorageNotifier notifier;
+    public final StorageNotifier notifier;
 
     private Storage() {
         this.notifier = new StorageNotifier();

@@ -19,6 +19,36 @@ public class PassengerRepository implements Repository<Passenger, Long> {
         }
     }
     
+    public void updateAll(Collection<Passenger> passengersToUpdate) {
+        synchronized (this) {
+            passengersToUpdate.forEach(this::update);
+        }
+    }
+    
+    public void update(Passenger updatedPassenger) {
+        Objects.requireNonNull(updatedPassenger, "Pasajero no puede ser nulo");
+        Long passengerId = updatedPassenger.getId();
+    
+        synchronized (this) {
+            // Buscar el índice del pasajero existente
+            int index = -1;
+            for (int i = 0; i < passengers.size(); i++) {
+                if (passengerId.equals(passengers.get(i).getId())) {
+                    index = i;
+                    break;
+                }
+            }
+        
+            if (index == -1) {
+                throw new IllegalArgumentException("Pasajero con ID " + passengerId + " no existe");
+            }
+        
+            // Reemplazar el pasajero existente
+            passengers.set(index, updatedPassenger);
+            notifyUpdate();
+        }
+    }
+    
     @Override
     public boolean add(Passenger passenger) {
         if (passenger == null) return false;
