@@ -60,4 +60,16 @@ public class Plane {
         return flights.size();
     }
     
+    public Plane clone() {
+        return new Plane(
+    
+            this.id,
+            this.brand,
+            this.model,
+            this.maxCapacity,
+            this.airline
+        );
+    
+
+}
 }

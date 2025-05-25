@@ -67,19 +67,6 @@ public class PlaneController {
 }
 
 
-    public static Response readPlane(String id) {
-        try {
-            Storage storage = Storage.getInstance();
-            Plane plane = storage.getPlane(id);
-            if (plane == null) {
-                return new Response("Plane not found", Status.NOT_FOUND);
-            }
-            return new Response("Plane retrieved successfully", Status.OK, plane);
-        } catch (Exception e) {
-            return new Response("Unexpected error", Status.INTERNAL_SERVER_ERROR);
-        }
-    }
-
     public static Response listPlanes() {
         try {
             Storage storage = Storage.getInstance();
@@ -90,4 +77,32 @@ public class PlaneController {
             return new Response("Unexpected error", Status.INTERNAL_SERVER_ERROR);
         }
     }
+    
+    public static Response getSortedPlanes() {
+    try {
+        // Obtener lista original de aviones desde el almacenamiento
+        ArrayList<Plane> planes = Storage.getInstance().getAllPlanes();
+        
+        // Crear una copia para trabajar (protección del estado original)
+        ArrayList<Plane> planesCopy = new ArrayList<>();
+        
+        //Verificar y clonar cada avión
+        if (planes != null) {
+            for (Plane plane : planes) {
+                if (plane != null) {
+                    planesCopy.add(plane.clone()); // Clonación del avión
+                }
+            }
+        }
+        
+        return new Response("Planes loaded successfully.", Status.OK, planesCopy);
+        
+    } catch (Exception ex) {
+        // Manejo de errores con logging
+        System.err.println("Error loading planes: " + ex.getMessage());
+        ex.printStackTrace();
+        return new Response("Unexpected error occurred while loading planes.", 
+                          Status.INTERNAL_SERVER_ERROR);
+    }
+}
 }
