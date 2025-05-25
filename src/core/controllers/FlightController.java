@@ -92,6 +92,7 @@ public static Response createFlight(String id, String planeId, String departureL
 
         // Crear el vuelo con escala
         Flight flight = new Flight(id, plane, dep, scale, arr, departureDate, hours, minutes, scaleHours, scaleMinutes);
+        
         if (!storage.addFlight(flight)) {
             return new Response("Could not add flight", Status.INTERNAL_SERVER_ERROR);
         }
@@ -108,7 +109,7 @@ public static Response createFlight(String id, String planeId, String departureL
     public static Response addFlight(String passengerId, String flightId) {
     try {
         long passengerIdLong =Integer.parseInt(passengerId);
-        int flightIdInt=Integer.parseInt( flightId);
+        int flightIdInt= Integer.parseInt(flightId);
 
         // Validar passengerId
         if (passengerId == null || passengerId.trim().isEmpty()) {
@@ -141,9 +142,6 @@ public static Response createFlight(String id, String planeId, String departureL
             return new Response("Passenger is already assigned to this flight.", Status.BAD_REQUEST);
         }
 
-        // Asignar
-        passenger.addFlight(flight);
-        flight.addPassenger(passenger);
 
         return new Response("Passenger added successfully to the flight.", Status.OK);
 

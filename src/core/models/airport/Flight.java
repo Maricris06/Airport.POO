@@ -2,6 +2,7 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
+
 package core.models.airport;
 
 import java.time.LocalDateTime;
@@ -60,11 +61,43 @@ public class Flight {
         }
     }
 
-    
-    public void addPassenger(Passenger passenger) {
-        this.passengers.add(passenger);
+    public void setPassengers(ArrayList<Passenger> passengers) {
+        this.passengers = passengers;
     }
-    
+
+    public void setPlane(Plane plane) {
+        this.plane = plane;
+    }
+
+    public void setDepartureLocation(Location departureLocation) {
+        this.departureLocation = departureLocation;
+    }
+
+    public void setScaleLocation(Location scaleLocation) {
+        this.scaleLocation = scaleLocation;
+    }
+
+    public void setArrivalLocation(Location arrivalLocation) {
+        this.arrivalLocation = arrivalLocation;
+    }
+
+    public void setHoursDurationArrival(int hoursDurationArrival) {
+        this.hoursDurationArrival = hoursDurationArrival;
+    }
+
+    public void setMinutesDurationArrival(int minutesDurationArrival) {
+        this.minutesDurationArrival = minutesDurationArrival;
+    }
+
+    public void setHoursDurationScale(int hoursDurationScale) {
+        this.hoursDurationScale = hoursDurationScale;
+    }
+
+    public void setMinutesDurationScale(int minutesDurationScale) {
+        this.minutesDurationScale = minutesDurationScale;
+    }
+
+
     public String getId() {
         return id;
     }
@@ -142,4 +175,7 @@ public class Flight {
     );
 }
 
+    public void addPassenger(Passenger passenger) {
+        this.passengers.add(passenger);
+    }
 }

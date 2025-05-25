@@ -224,14 +224,7 @@ public class PassengerController {
                 return new Response("Passenger not found", Status.NOT_FOUND);
             }
 
-            // Actualizar datos utilizando setters
-            passenger.setFirstname(firstname);
-            passenger.setLastname(lastname);
-            passenger.setBirthDate(birthDate);
-            passenger.setCountryPhoneCode(countryPhoneCode);
-            passenger.setPhone(phone);
-            passenger.setCountry(country);
-
+          
             // Guardar cambios en el almacenamiento, si es necesario
             if (!storage.updatePassenger(passenger)) {
                 return new Response("Could not update passenger", Status.INTERNAL_SERVER_ERROR);
