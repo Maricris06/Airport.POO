@@ -8,10 +8,11 @@ import core.interfaces.repository.IFlightRepository;
 import core.interfaces.repository.ILocationRepository;
 import core.interfaces.repository.IPassengerRepository;
 import core.interfaces.repository.IPlaneRepository;
+import core.interfaces.repository.IStorage;
 
 import java.util.List;
 
-public class Storage {
+public class Storage implements IStorage {
 
     private static Storage instance;
 
