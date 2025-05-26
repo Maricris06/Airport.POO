@@ -1,21 +1,13 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package core.models.airport;
 
-/**
- *
- * @author 
- */
 public class Location {
     
     private final String airportId;
-    private String airportName;
-    private String airportCity;
-    private String airportCountry;
-    private double airportLatitude;
-    private double airportLongitude;
+    private final String airportName;
+    private final String airportCity;
+    private final String airportCountry;
+    private final double airportLatitude;
+    private final double airportLongitude;
 
     public Location(String airportId, String airportName, String airportCity, String airportCountry, double airportLatitude, double airportLongitude) {
         this.airportId = airportId;
@@ -51,14 +43,31 @@ public class Location {
     }
     
     public Location clone() {
-    return new Location(
-        this.airportId,
-        this.airportName,
-        this.airportCity,
-        this.airportCountry,
-        this.airportLatitude,
-        this.airportLongitude
-    );
-}
+        return new Location(
+            this.airportId,
+            this.airportName,
+            this.airportCity,
+            this.airportCountry,
+            this.airportLatitude,
+            this.airportLongitude
+        );
+    }
 
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) return true;
+        if (obj == null || getClass() != obj.getClass()) return false;
+        Location other = (Location) obj;
+        return airportId.equals(other.airportId);
+    }
+
+    @Override
+    public int hashCode() {
+        return airportId.hashCode();
+    }
+
+    @Override
+    public String toString() {
+        return airportName + " (" + airportCity + ", " + airportCountry + ")";
+    }
 }

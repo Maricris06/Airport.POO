@@ -1,3 +1,4 @@
+
 /*
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
@@ -10,6 +11,7 @@ import core.models.airport.Plane;
 import core.models.storage.Storage;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.List;
 
 /**
  *
@@ -70,7 +72,7 @@ public class PlaneController {
     public static Response listPlanes() {
         try {
             Storage storage = Storage.getInstance();
-            ArrayList<Plane> planes = storage.getAllPlanes();
+            List<Plane> planes = storage.getAllPlanes();
             planes.sort(Comparator.comparing(Plane::getId));
             return new Response("Plane list retrieved", Status.OK, planes);
         } catch (Exception e) {
@@ -81,7 +83,7 @@ public class PlaneController {
     public static Response getSortedPlanes() {
     try {
         // Obtener lista original de aviones desde el almacenamiento
-        ArrayList<Plane> planes = Storage.getInstance().getAllPlanes();
+        List<Plane> planes = Storage.getInstance().getAllPlanes();
         
         // Crear una copia para trabajar (protección del estado original)
         ArrayList<Plane> planesCopy = new ArrayList<>();

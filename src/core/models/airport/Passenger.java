@@ -1,28 +1,22 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package core.models.airport;
 
 import java.time.LocalDate;
 import java.time.Period;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
 
-/**
- *
- * @author 
- *
- */
 public class Passenger {
     
-    private final long id;
+    private long id;
     private String firstname;
     private String lastname;
     private LocalDate birthDate;
     private int countryPhoneCode;
     private long phone;
     private String country;
-    private ArrayList<Flight> flights;
+    private final List<Flight> flights;
 
     public Passenger(long id, String firstname, String lastname, LocalDate birthDate, int countryPhoneCode, long phone, String country) {
         this.id = id;
@@ -34,6 +28,8 @@ public class Passenger {
         this.country = country;
         this.flights = new ArrayList<>();
     }
+
+    // Constructor copia con copia profunda de vuelos
     public Passenger(Passenger passenger) {
         this.id = passenger.id;
         this.firstname = passenger.firstname;
@@ -46,20 +42,12 @@ public class Passenger {
         this.flights = new ArrayList<>();
         if (passenger.flights != null) {
             for (Flight flight : passenger.flights) {
-                if (flight != null) {
-                    this.flights.add(flight.clone());
-                } else {
-                    this.flights.add(null);
-                }
+                this.flights.add(flight != null ? flight.clone() : null);
             }
         }
     }
-    
 
-    public void addFlight(Flight flight) {
-        this.flights.add(flight);
-    }
-    
+    // Getters
     public long getId() {
         return id;
     }
@@ -88,8 +76,13 @@ public class Passenger {
         return country;
     }
 
-    public ArrayList<Flight> getFlights() {
-        return flights;
+    public List<Flight> getFlights() {
+        return Collections.unmodifiableList(flights);
+    }
+
+    // Setters
+    public void setId(long id) {
+        this.id = id;
     }
 
     public void setFirstname(String firstname) {
@@ -115,7 +108,13 @@ public class Passenger {
     public void setCountry(String country) {
         this.country = country;
     }
-    
+
+    public void addFlight(Flight flight) {
+        if (flight != null) {
+            flights.add(flight);
+        }
+    }
+
     public String getFullname() {
         return firstname + " " + lastname;
     }
@@ -132,16 +131,29 @@ public class Passenger {
         return flights.size();
     }
     
-   public Passenger clone() {
-        return new Passenger(
-            this.id,
-            this.firstname,
-            this.lastname,
-            this.birthDate,
-            this.countryPhoneCode,
-            this.phone,
-            this.country
-        );
+    public Passenger clone() {
+        return new Passenger(this);
     }
-    
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof Passenger)) return false;
+        Passenger that = (Passenger) o;
+        return id == that.id;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id);
+    }
+
+    @Override
+    public String toString() {
+        return "Passenger{" +
+               "id=" + id +
+               ", fullname='" + getFullname() + '\'' +
+               ", country='" + country + '\'' +
+               '}';
+    }
 }

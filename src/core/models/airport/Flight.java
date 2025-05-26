@@ -1,105 +1,56 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
-
 package core.models.airport;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
-/**
- *
- * @author 
- */
 public class Flight {
-    
+
     private final String id;
-    private ArrayList<Passenger> passengers;
-    private Plane plane;
-    private Location departureLocation;
-    private Location scaleLocation;
-    private Location arrivalLocation;
+    private final Plane plane;
+    private final Location departureLocation;
+    private final Location scaleLocation;  // puede ser null si no hay escala
+    private final Location arrivalLocation;
     private LocalDateTime departureDate;
-    private int hoursDurationArrival;
-    private int minutesDurationArrival;
-    private int hoursDurationScale;
-    private int minutesDurationScale;
-    
+    private final Duration durationToScale;  // Duration hasta escala (0 si no hay escala)
+    private final Duration durationFromScale; // Duration desde escala a destino (igual a duración total si no hay escala)
+    private final List<Passenger> passengers;
 
-
- public Flight(String id, Plane plane, Location departureLocation, Location arrivalLocation, LocalDateTime departureDate, int hoursDurationArrival, int minutesDurationArrival) {
-        this.id = id;
-        this.passengers = new ArrayList<>();
-        this.plane = plane;
-        this.departureLocation = departureLocation;
-        this.arrivalLocation = arrivalLocation;
-        this.departureDate = departureDate;
-        this.hoursDurationArrival = hoursDurationArrival;
-        this.minutesDurationArrival = minutesDurationArrival;
-
-        if (this.plane != null) {
-            this.plane.addFlight(this);
-        }
+    // Constructor para vuelo sin escala
+    public Flight(String id, Plane plane, Location departureLocation, Location arrivalLocation,
+                  LocalDateTime departureDate, Duration totalDuration) {
+        this(id, plane, departureLocation, null, arrivalLocation, departureDate,
+             Duration.ZERO, totalDuration);
     }
 
-    public Flight(String id, Plane plane, Location departureLocation, Location scaleLocation, Location arrivalLocation, LocalDateTime departureDate, int hoursDurationArrival, int minutesDurationArrival, int hoursDurationScale, int minutesDurationScale) {
+    // Constructor para vuelo con escala
+    public Flight(String id, Plane plane, Location departureLocation, Location scaleLocation, Location arrivalLocation,
+                  LocalDateTime departureDate, Duration durationToScale, Duration durationFromScale) {
         this.id = id;
-        this.passengers = new ArrayList<>();
         this.plane = plane;
         this.departureLocation = departureLocation;
         this.scaleLocation = scaleLocation;
         this.arrivalLocation = arrivalLocation;
         this.departureDate = departureDate;
-        this.hoursDurationArrival = hoursDurationArrival;
-        this.minutesDurationArrival = minutesDurationArrival;
-        this.hoursDurationScale = hoursDurationScale;
-        this.minutesDurationScale = minutesDurationScale;
+        this.durationToScale = durationToScale != null ? durationToScale : Duration.ZERO;
+        this.durationFromScale = durationFromScale != null ? durationFromScale : Duration.ZERO;
+        this.passengers = new ArrayList<>();
+    }
 
-        if (this.plane != null) {
-            this.plane.addFlight(this);
+    public void addPassenger(Passenger passenger) {
+        if (passenger != null && !passengers.contains(passenger)) {
+            passengers.add(passenger);
         }
     }
-
-    public void setPassengers(ArrayList<Passenger> passengers) {
-        this.passengers = passengers;
-    }
-
-    public void setPlane(Plane plane) {
-        this.plane = plane;
-    }
-
-    public void setDepartureLocation(Location departureLocation) {
-        this.departureLocation = departureLocation;
-    }
-
-    public void setScaleLocation(Location scaleLocation) {
-        this.scaleLocation = scaleLocation;
-    }
-
-    public void setArrivalLocation(Location arrivalLocation) {
-        this.arrivalLocation = arrivalLocation;
-    }
-
-    public void setHoursDurationArrival(int hoursDurationArrival) {
-        this.hoursDurationArrival = hoursDurationArrival;
-    }
-
-    public void setMinutesDurationArrival(int minutesDurationArrival) {
-        this.minutesDurationArrival = minutesDurationArrival;
-    }
-
-    public void setHoursDurationScale(int hoursDurationScale) {
-        this.hoursDurationScale = hoursDurationScale;
-    }
-
-    public void setMinutesDurationScale(int minutesDurationScale) {
-        this.minutesDurationScale = minutesDurationScale;
-    }
-
 
     public String getId() {
         return id;
+    }
+
+    public Plane getPlane() {
+        return plane;
     }
 
     public Location getDepartureLocation() {
@@ -118,64 +69,57 @@ public class Flight {
         return departureDate;
     }
 
-    public int getHoursDurationArrival() {
-        return hoursDurationArrival;
-    }
-
-    public int getMinutesDurationArrival() {
-        return minutesDurationArrival;
-    }
-
-    public int getHoursDurationScale() {
-        return hoursDurationScale;
-    }
-
-    public int getMinutesDurationScale() {
-        return minutesDurationScale;
-    }
-
-    public Plane getPlane() {
-        return plane;
-    }
-
     public void setDepartureDate(LocalDateTime departureDate) {
         this.departureDate = departureDate;
     }
-    
-    public LocalDateTime calculateArrivalDate() {
-        return departureDate.plusHours(hoursDurationScale).plusHours(hoursDurationArrival).plusMinutes(minutesDurationScale).plusMinutes(minutesDurationArrival);
+
+    // Devuelve una lista inmutable para no exponer la lista interna
+    public List<Passenger> getPassengers() {
+        return Collections.unmodifiableList(passengers);
     }
-    
-    public void delay(int hours, int minutes) {
-        this.departureDate = this.departureDate.plusHours(hours).plusMinutes(minutes);
-    }
-    
+
     public int getNumPassengers() {
         return passengers.size();
     }
 
-    public ArrayList<Passenger> getPassengers() {
-        return passengers;
+    // Calcula la fecha y hora de llegada final considerando escala
+    public LocalDateTime calculateArrivalDate() {
+        if (scaleLocation == null) {
+            return departureDate.plus(durationFromScale);
+        }
+        // si hay escala, la llegada es salida + duración a escala + duración desde escala
+        return departureDate.plus(durationToScale).plus(durationFromScale);
     }
-    
-    
-    
-  public Flight clone() {
-    return new Flight(
-        this.id,
-        this.plane,
-        this.departureLocation,
-        this.scaleLocation,
-        this.arrivalLocation,
-        this.departureDate,
-        this.hoursDurationArrival,
-        this.minutesDurationArrival,
-        this.hoursDurationScale,
-        this.minutesDurationScale
-    );
-}
 
-    public void addPassenger(Passenger passenger) {
-        this.passengers.add(passenger);
+    // Retrasa la salida
+    public void delay(int hours, int minutes) {
+        this.departureDate = this.departureDate.plusHours(hours).plusMinutes(minutes);
+    }
+
+    // Clone: no copia pasajeros ni añade a plane automáticamente
+    public Flight clone() {
+        return new Flight(
+            this.id,
+            this.plane,
+            this.departureLocation,
+            this.scaleLocation,
+            this.arrivalLocation,
+            this.departureDate,
+            this.durationToScale,
+            this.durationFromScale
+        );
+    }
+
+    @Override
+    public String toString() {
+        return "Flight{" +
+               "id='" + id + '\'' +
+               ", plane=" + (plane != null ? plane.getId() : "null") +
+               ", departureLocation=" + departureLocation.getAirportId() +
+               ", scaleLocation=" + (scaleLocation != null ? scaleLocation.getAirportId() : "none") +
+               ", arrivalLocation=" + arrivalLocation.getAirportId() +
+               ", departureDate=" + departureDate +
+               ", passengers=" + passengers.size() +
+               '}';
     }
 }

@@ -1,35 +1,30 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package core.models.storage;
 
 import core.models.airport.Flight;
-import core.models.airport.Location;
 import core.models.airport.Passenger;
 import core.models.airport.Plane;
-import java.awt.List;
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Comparator;
+import core.models.airport.Location;
+import core.interfaces.repository.IFlightRepository;
+import core.interfaces.repository.ILocationRepository;
+import core.interfaces.repository.IPassengerRepository;
+import core.interfaces.repository.IPlaneRepository;
 
-/**
- *
- * @author User invitado
- */
+import java.util.List;
+
 public class Storage {
-      private static Storage instance;
 
-    private ArrayList<Flight> flights;
-    private ArrayList<Passenger> passengers;
-    private ArrayList<Plane> planes;
-     private ArrayList<Location> locations;
+    private static Storage instance;
+
+    private final IFlightRepository flightRepository;
+    private final IPassengerRepository passengerRepository;
+    private final IPlaneRepository planeRepository;
+    private final ILocationRepository locationRepository;
 
     private Storage() {
-        this.flights = new ArrayList<>();
-        this.passengers = new ArrayList<>();
-        this.planes = new ArrayList<>();
-        this.locations = new ArrayList<>();
+        this.flightRepository = new FlightRepository();
+        this.passengerRepository = new PassengerRepository();
+        this.planeRepository = new PlaneRepository();
+        this.locationRepository = new LocationRepository();
     }
 
     public static Storage getInstance() {
@@ -38,190 +33,98 @@ public class Storage {
         }
         return instance;
     }
+    
+    public boolean addBookingLink(String flightId, long passengerId) {
+        Flight flight = flightRepository.getFlight(flightId);
+        Passenger passenger = passengerRepository.getPassenger(passengerId);
 
-    // ----------- FLIGHTS -----------
+        if (flight == null || passenger == null) {
+            return false; // No se encontró vuelo o pasajero
+        }
+
+        // Añadir pasajero al vuelo si no está ya
+        flight.addPassenger(passenger);
+
+        // Añadir vuelo al pasajero si no está ya
+        passenger.addFlight(flight);
+
+        // Actualizar pasajero para guardar relación
+        return passengerRepository.updatePassenger(passenger);
+    }
+
+    // -------- FLIGHTS --------
 
     public boolean addFlight(Flight flight) {
-        for (Flight f : this.flights) {
-            if (f.getId().equals(flight.getId())) {
-                return false;
-            }
-        }
-        this.flights.add(flight);
-        return true;
+        return flightRepository.addFlight(flight);
     }
 
     public Flight getFlight(String id) {
-        for (Flight flight : this.flights) {
-            if (flight.getId().equals(id)) {
-                return flight;
-            }
-        }
-        return null;
+        return flightRepository.getFlight(id);
     }
 
-    public ArrayList<Flight> getAllFlights() {
-        return new ArrayList<>(this.flights);
-    }
-   
-
-public ArrayList<Flight> getSortedFlights() {
-    // Crear una copia de la lista para no modificar la original
-    ArrayList<Flight> sortedFlights = new ArrayList<>(flights);
-    int n = sortedFlights.size();
-
-    for (int i = 0; i < n - 1; i++) {
-        for (int j = 0; j < n - i - 1; j++) {
-            // Comparar por fecha de salida
-            LocalDateTime date1 = sortedFlights.get(j).getDepartureDate();
-            LocalDateTime date2 = sortedFlights.get(j + 1).getDepartureDate();
-
-            if (date1.isAfter(date2)) {
-                // Intercambiar vuelos
-                Flight temp = sortedFlights.get(j);
-                sortedFlights.set(j, sortedFlights.get(j + 1));
-                sortedFlights.set(j + 1, temp);
-            }
-        }
+    public List<Flight> getAllFlights() {
+        return flightRepository.getAllFlights();
     }
 
-    return sortedFlights;
-}
+    public List<Flight> getSortedFlights() {
+        return flightRepository.getSortedFlights();
+    }
 
-
-    // ----------- PASSENGERS -----------
+    // -------- PASSENGERS --------
 
     public boolean addPassenger(Passenger passenger) {
-        for (Passenger p : this.passengers) {
-            if (p.getId() == passenger.getId()) {
-                return false;
-            }
-        }
-        this.passengers.add(passenger);
-        return true;
+        return passengerRepository.addPassenger(passenger);
     }
-    
-     public boolean updatePassenger(Passenger passenger) {
-        for (int i = 0; i < passengers.size(); i++) {
-            if (passengers.get(i).getId() == passenger.getId()) {
-                passengers.set(i, passenger); // Actualiza el pasajero en la lista
-                return true; // Actualización exitosa
-            }
-        }
-        return false; // No se encontró el pasajero para actualizar
+
+    public boolean updatePassenger(Passenger passenger) {
+        return passengerRepository.updatePassenger(passenger);
     }
-     
+
     public Passenger getPassenger(long id) {
-        for (Passenger passenger : this.passengers) {
-            if (passenger.getId() == id) {
-                return passenger;
-            }
-        }
-        return null;
+        return passengerRepository.getPassenger(id);
     }
 
-    public ArrayList<Passenger> getAllPassengers() {
-        return new ArrayList<>(this.passengers);
+    public List<Passenger> getAllPassengers() {
+        return passengerRepository.getAllPassengers();
+    }
+
+    public List<Passenger> getSortedPassengers() {
+        return passengerRepository.getSortedPassengers();
     }
     
-     public ArrayList<Passenger> getSortedPassengers() {
-    // Crear una copia para no modificar la lista original
-    ArrayList<Passenger> sortedPassengers = new ArrayList<>(passengers);
-    int n = sortedPassengers.size();
-    for (int i = 0; i < n - 1; i++) {
-        for (int j = 0; j < n - i - 1; j++) {
-            // Comparar por ID; cambia getId() por el criterio que necesites
-            if (sortedPassengers.get(j).getId() > sortedPassengers.get(j + 1).getId()) {
-                // Intercambiar posiciones
-                Passenger temp = sortedPassengers.get(j);
-                sortedPassengers.set(j, sortedPassengers.get(j + 1));
-                sortedPassengers.set(j + 1, temp);
-            }
-        }
+    public List<Flight> getPassengerFlights(Passenger passenger) {
+        return passengerRepository.getFlightsByPassenger(passenger);
     }
-    return sortedPassengers;
-}
-     
-public ArrayList<Flight> getPassengerFlights(Passenger passenger) {
-    ArrayList<Flight> passengerFlights = new ArrayList<>();
-    for (Flight flight : flights) {
-        for (Passenger p : flight.getPassengers()) {
-            if (p.getId() == passenger.getId()) {
-                passengerFlights.add(flight);
-                break; 
-            }
-        }
-    }
-    return passengerFlights;
-}
 
+    // -------- PLANES --------
 
-    // ----------- PLANES -----------
     public boolean addPlane(Plane plane) {
-        for (Plane p : this.planes) {
-            if (p.getId().equals(plane.getId())) {
-                return false; // Plane already exists
-            }
-        }
-        this.planes.add(plane);
-        return true;
+        return planeRepository.addPlane(plane);
     }
-    
+
     public Plane getPlane(String id) {
-        for (Plane plane : this.planes) {
-            if (plane.getId().equals(id)) {
-                return plane;
-            }
-        }
-        return null;
+        return planeRepository.getPlane(id);
     }
 
-    public ArrayList<Plane> getAllPlanes() {
-        return new ArrayList<>(this.planes);
+    public List<Plane> getAllPlanes() {
+        return planeRepository.getAllPlanes();
     }
 
-    public ArrayList<Location> getAllLocations() {
-        return new ArrayList<>(locations); // Devuelve una copia de la lista de ubicaciones
-    }
-    // Método para obtener una ubicación específica por su ID
-    public Location getLocation(String airportId) {
-        for (Location location : locations) {
-            if (location.getAirportId().equals(airportId)) {
-                return location; // Devuelve la ubicación si se encuentra
-            }
-        }
-        return null; // Devuelve null si no se encuentra la ubicación
-    }
-    // Método para agregar una nueva ubicación
+    // -------- LOCATIONS --------
+
     public boolean addLocation(Location location) {
-        if (location == null || getLocation(location.getAirportId()) != null) {
-            return false; // No se puede agregar si la ubicación es nula o ya existe
-        }
-        locations.add(location); // Agrega la nueva ubicación
-        return true; // Retorna true si se agregó con éxito
+        return locationRepository.addLocation(location);
     }
 
-  public ArrayList<Location> getSortedLocations() {
-    // Crear una copia para no modificar la lista original
-    ArrayList<Location> sortedLocations = new ArrayList<>(locations);
-    int n = sortedLocations.size();
-    
-    // Ordenar usando el algoritmo de burbuja (puedes cambiar a otro algoritmo si lo prefieres)
-    for (int i = 0; i < n - 1; i++) {
-        for (int j = 0; j < n - i - 1; j++) {
-            // Comparar por ID; cambia getId() por el criterio que necesites
-            if (sortedLocations.get(j).getAirportId().compareTo(sortedLocations.get(j + 1).getAirportId()) > 0) {
-                // Intercambiar posiciones
-                Location temp = sortedLocations.get(j);
-                sortedLocations.set(j, sortedLocations.get(j + 1));
-                sortedLocations.set(j + 1, temp);
-            }
-        }
+    public Location getLocation(String airportId) {
+        return locationRepository.getLocation(airportId);
     }
-    return sortedLocations;
+
+    public List<Location> getAllLocations() {
+        return locationRepository.getAllLocations();
+    }
+
+    public List<Location> getSortedLocations() {
+        return locationRepository.getSortedLocations();
+    }
 }
-
-
-  
-}
-

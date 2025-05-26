@@ -1,3 +1,4 @@
+
 /*
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
@@ -13,6 +14,7 @@ import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.List;
 
 /**
  *
@@ -224,7 +226,14 @@ public class PassengerController {
                 return new Response("Passenger not found", Status.NOT_FOUND);
             }
 
-          
+            // Actualizar datos utilizando setters
+            passenger.setFirstname(firstname);
+            passenger.setLastname(lastname);
+            passenger.setBirthDate(birthDate);
+            passenger.setCountryPhoneCode(countryPhoneCode);
+            passenger.setPhone(phone);
+            passenger.setCountry(country);
+
             // Guardar cambios en el almacenamiento, si es necesario
             if (!storage.updatePassenger(passenger)) {
                 return new Response("Could not update passenger", Status.INTERNAL_SERVER_ERROR);
@@ -264,7 +273,7 @@ public class PassengerController {
             }
 
             // Obtener y ordenar vuelos del pasajero
-            ArrayList<Flight> flights = Storage.getInstance().getPassengerFlights(passenger);
+            List<Flight> flights = Storage.getInstance().getPassengerFlights(passenger);
             if (flights != null) {
                 flights.sort(Comparator.comparing(Flight::getDepartureDate));
             }
@@ -291,7 +300,7 @@ public class PassengerController {
     public static Response getSortedPassengers() {
         try {
             // Obtener lista ordenada de pasajeros desde el almacenamiento
-            ArrayList<Passenger> passengers = Storage.getInstance().getSortedPassengers();
+            List<Passenger> passengers = Storage.getInstance().getSortedPassengers();
             ArrayList<Passenger> passengersCopy = new ArrayList<>();
 
             // Verificar que la lista no sea nula

@@ -1,3 +1,4 @@
+
 /*
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
@@ -20,6 +21,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.List;
 
 public class FlightController {
 
@@ -47,7 +49,8 @@ public static Response createFlight(String id, String planeId, String departureL
         // Validar duración de escala
         int scaleHours = 0;
         int scaleMinutes = 0;
-        if (scaleLocationId != null && !scaleLocationId.isEmpty()) {
+        boolean hasScale = scaleLocationId != null && !scaleLocationId.isEmpty();
+        if (hasScale) {
             try {
                 scaleHours = Integer.parseInt(hoursDurationsScale);
                 scaleMinutes = Integer.parseInt(minutesDurationsScale);
@@ -83,16 +86,33 @@ public static Response createFlight(String id, String planeId, String departureL
             return new Response("Invalid plane or location IDs", Status.BAD_REQUEST);
         }
 
-        if (scaleLocationId != null && !scaleLocationId.isEmpty()) {
+        if (hasScale) {
             scale = storage.getLocation(scaleLocationId);
             if (scale == null) {
                 return new Response("Invalid scale location ID", Status.BAD_REQUEST);
             }
         }
 
-        // Crear el vuelo con escala
-        Flight flight = new Flight(id, plane, dep, scale, arr, departureDate, hours, minutes, scaleHours, scaleMinutes);
-        
+        // Aquí creamos los objetos Duration a partir de las horas y minutos
+        java.time.Duration durationToScale = java.time.Duration.ZERO;
+        java.time.Duration durationFromScale;
+
+        if (hasScale) {
+            durationToScale = java.time.Duration.ofHours(scaleHours).plusMinutes(scaleMinutes);
+            durationFromScale = java.time.Duration.ofHours(hours).plusMinutes(minutes);
+        } else {
+            // Si no hay escala, toda la duración es la duración desde la salida hasta el destino
+            durationFromScale = java.time.Duration.ofHours(hours).plusMinutes(minutes);
+        }
+
+        // Crear el vuelo usando el constructor correcto
+        Flight flight;
+        if (hasScale) {
+            flight = new Flight(id, plane, dep, scale, arr, departureDate, durationToScale, durationFromScale);
+        } else {
+            flight = new Flight(id, plane, dep, arr, departureDate, durationFromScale);
+        }
+
         if (!storage.addFlight(flight)) {
             return new Response("Could not add flight", Status.INTERNAL_SERVER_ERROR);
         }
@@ -104,12 +124,13 @@ public static Response createFlight(String id, String planeId, String departureL
     }
 }
 
+
     
 
     public static Response addFlight(String passengerId, String flightId) {
     try {
         long passengerIdLong =Integer.parseInt(passengerId);
-        int flightIdInt= Integer.parseInt(flightId);
+        int flightIdInt=Integer.parseInt( flightId);
 
         // Validar passengerId
         if (passengerId == null || passengerId.trim().isEmpty()) {
@@ -142,6 +163,9 @@ public static Response createFlight(String id, String planeId, String departureL
             return new Response("Passenger is already assigned to this flight.", Status.BAD_REQUEST);
         }
 
+        // Asignar
+        passenger.addFlight(flight);
+        flight.addPassenger(passenger);
 
         return new Response("Passenger added successfully to the flight.", Status.OK);
 
@@ -210,7 +234,7 @@ public static Response createFlight(String id, String planeId, String departureL
     public static Response getSortedFlights() {
     try {
         // Obtener lista ordenada de vuelos desde el almacenamiento
-        ArrayList<Flight> flights = Storage.getInstance().getSortedFlights();
+        List<Flight> flights = Storage.getInstance().getSortedFlights();
         ArrayList<Flight> flightsCopy = new ArrayList<>();
         // Verificar que la lista no sea nula
         if (flights != null) {

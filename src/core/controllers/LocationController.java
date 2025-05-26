@@ -1,3 +1,4 @@
+
 /*
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
@@ -9,6 +10,7 @@ import core.controllers.utils.Status;
 import core.models.airport.Location;
 import core.models.storage.Storage;
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  *
@@ -93,7 +95,7 @@ public class LocationController {
   public static Response getSortedLocations() {
     try {
         // Obtener lista ordenada de ubicaciones desde el almacenamiento
-        ArrayList<Location> locations = Storage.getInstance().getSortedLocations();
+        List<Location> locations = Storage.getInstance().getSortedLocations();
         ArrayList<Location> locationsCopy = new ArrayList<>();
 
         // Verificar que la lista no sea nula

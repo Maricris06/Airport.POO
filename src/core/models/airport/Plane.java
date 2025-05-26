@@ -1,23 +1,18 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package core.models.airport;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
 
-/**
- *
- * @author 
- */
 public class Plane {
     
     private final String id;
-    private String brand;
-    private String model;
+    private final String brand;
+    private final String model;
     private final int maxCapacity;
-    private String airline;
-    private ArrayList<Flight> flights;
+    private final String airline;
+    private final List<Flight> flights;
 
     public Plane(String id, String brand, String model, int maxCapacity, String airline) {
         this.id = id;
@@ -29,7 +24,9 @@ public class Plane {
     }
 
     public void addFlight(Flight flight) {
-        this.flights.add(flight);
+        if (flight != null && !flights.contains(flight)) {
+            flights.add(flight);
+        }
     }
     
     public String getId() {
@@ -52,8 +49,8 @@ public class Plane {
         return airline;
     }
 
-    public ArrayList<Flight> getFlights() {
-        return flights;
+    public List<Flight> getFlights() {
+        return Collections.unmodifiableList(flights);
     }
     
     public int getNumFlights() {
@@ -61,15 +58,38 @@ public class Plane {
     }
     
     public Plane clone() {
+        // Copia superficial; la lista flights queda vacía en el clon para evitar efectos colaterales
         return new Plane(
-    
             this.id,
             this.brand,
             this.model,
             this.maxCapacity,
             this.airline
         );
+    }
     
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof Plane)) return false;
+        Plane plane = (Plane) o;
+        return id.equals(plane.id);
+    }
 
-}
+    @Override
+    public int hashCode() {
+        return Objects.hash(id);
+    }
+    
+    @Override
+    public String toString() {
+        return "Plane{" +
+               "id='" + id + '\'' +
+               ", brand='" + brand + '\'' +
+               ", model='" + model + '\'' +
+               ", maxCapacity=" + maxCapacity +
+               ", airline='" + airline + '\'' +
+               ", numFlights=" + flights.size() +
+               '}';
+    }
 }
